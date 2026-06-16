@@ -1,24 +1,62 @@
 package com.example.demo.service;
 
-import com.example.demo.data.Voiture;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import com.example.demo.data.Voiture;
 
-@SpringBootTest
+@ExtendWith(MockitoExtension.class)
 public class StatistiqueTests {
 
-    @Test
-    void testStatistique() {
-        StatistiqueImpl statistique = new StatistiqueImpl();
-        Voiture v1 = new Voiture("Ferrari", 3000);
-        Voiture v2 = new Voiture("Porsche", 3000);
-        statistique.ajouter(v1);
-        statistique.ajouter(v2);
-        Echantillon echantillon = statistique.prixMoyen();
-        assertEquals(3000, echantillon.getPrixMoyen());
-        assertEquals(2, echantillon.getNombreDeVoitures());
+    @Mock
+    private Echantillon echantillonMock; // On simule la classe qui fournit les données
+
+    @InjectMocks
+    private StatistiqueImpl statistiqueService; // Injecte le mock ci-dessus dans le service à tester
+
+    private List<Voiture> listeVoitures;
+
+    @BeforeEach
+    public void setUp() {
+        // Préparation d'un jeu de données de test
+        listeVoitures = new ArrayList<>();
+        listeVoitures.add(new Voiture("Renault", 15000));
+        listeVoitures.add(new Voiture("Peugeot", 25000));
+        listeVoitures.add(new Voiture("Tesla", 50000));
     }
 
+    @Test
+    public void testPrixMoyen() {
+        // En se basant sur le comportement de Echantillon :
+        // "Quand on appelle echantillonMock.getVoitures(), alors renvoie listeVoitures"
+        when(echantillonMock.getVoitures()).thenReturn(listeVoitures);
+
+        // Calcul attendu : (15000 + 25000 + 50000) / 3 = 30000
+        double prixMoyenCalcule = statistiqueService.prixMoyen();
+
+        assertEquals(30000, prixMoyenCalcule, 0.001, "Le prix moyen calculé est incorrect");
+        
+        // Optionnel : On vérifie que la méthode du mock a bien été appelée une fois
+        verify(echantillonMock, times(1)).getVoitures();
+    }
+
+    @Test
+    public void testPrixMoyenEchantillonVide() {
+        // Cas limite : que se passe-t-il si la liste est vide ?
+        when(echantillonMock.getVoitures()).thenReturn(new ArrayList<>());
+
+        double prixMoyenCalcule = statistiqueService.prixMoyen();
+
+        assertEquals(0, prixMoyenCalcule, 0.001, "Le prix moyen d'un échantillon vide doit être 0");
+    }
 }
